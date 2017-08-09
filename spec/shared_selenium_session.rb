@@ -127,6 +127,18 @@ RSpec.shared_examples "Capybara::Session" do |session, mode|
         elements = @session.all(:link) { |node| raise Selenium::WebDriver::Error::StaleElementReferenceError }
         expect(elements.size).to eq 0
       end
+
+      it "ignores stale elements in results" do
+        @session.visit('/path')
+        allow_any_instance_of(Capybara::Selenium::Node).to receive(:visible?).and_raise(Selenium::WebDriver::Error::StaleElementReferenceError)
+
+        elements = @session.all(:link)
+        time = Time.now
+        Capybara.using_wait_time(2) do
+          expect(elements.size).to eq 0
+        end
+        expect(Time.now).to be_within(1).of(time)
+      end
     end
 
     describe "#evaluate_script" do
